@@ -1,0 +1,420 @@
+<!--
+CandyCrush
+Your Name: Johnson Ogunyomi
+Collaborators: None
+-->
+<!DOCTYPE html>
+<html>
+<!--
+/* Copyright (c) 2017 MIT 6.813/6.831 course staff, all rights reserved.
+ * Redistribution of original or derived work requires permission of course staff.
+ */
+-->
+
+<head>
+<meta charset="utf-8">
+<title>CandyCrush</title>
+
+<!-- Load style sheets -->
+<link rel="stylesheet" href=
+  "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.css">
+
+<link rel="stylesheet" href="mainLayout.css">
+
+<!-- Use mobile-aware viewport -->
+<meta name="viewport" content=
+  "width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!-- Load any supplemental Javascript libraries here -->
+<script src=
+  "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src=
+  "https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.2/seedrandom.js">
+</script>
+<script src="candy.js"></script>
+<script src="board.js"></script>
+<script src="rules.js"></script>
+
+<script>
+
+// By default, the first board loaded by your page will be the same 
+// each time you load (which is accomplished by "seeding" the random
+// number generator. This makes testing (and grading!) easier!
+Math.seedrandom(0);
+// A short jQuery extension to read query parameters from the URL.
+$.extend({
+  getUrlVars: function() {
+    var vars = [], pair;
+    var pairs = window.location.search.substr(1).split('&');
+    for (var i = 0; i < pairs.length; i++) {
+      pair = pairs[i].split('=');
+      vars.push(pair[0]);
+      vars[pair[0]] = pair[1] &&
+          decodeURIComponent(pair[1].replace(/\+/g, ' '));
+    }
+    return vars;
+  },
+  getUrlVar: function(name) {
+    return $.getUrlVars()[name];
+  }
+});
+
+// constants
+var DEFAULT_BOARD_SIZE = 8; //Set size to 8
+var candiesA_H = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']; 
+
+var fromCandy, toCandy = null;
+    
+// data model at global scope for easier debugging
+var board;
+var rules;
+// initialize board
+if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) 
+	board = new Board($.getUrlVar('size'));  
+else 
+	board = new Board(DEFAULT_BOARD_SIZE);
+
+// load a rule
+rules = new Rules(board);
+    
+var drawTable = function() 
+{
+  var mainTable = document.getElementById("mainTable"); 
+  var tbl  = document.createElement('table');
+ 
+  tbl.id = "mainTable"; 
+ 
+  var columnNames = []; 
+  for (var i = 0; i < DEFAULT_BOARD_SIZE; i++) 
+  {
+    columnNames.push(candiesA_H[i]) 
+  }
+  
+  var i = 0;
+  while (i < DEFAULT_BOARD_SIZE) 
+  {
+      var iOffByOne = i + 1; //Variable to call offset by 1
+      var tr = tbl.insertRow(); 
+      tr.style.height = 320/DEFAULT_BOARD_SIZE;
+      
+      for(var j = 0; j < DEFAULT_BOARD_SIZE; j++) 
+      {
+        if (board.getCandyAt(i,j)) 
+        {
+          var colorCell = board.getCandyAt(i,j).color; 
+          var td = tr.insertCell(); 
+   
+          td.id = (columnNames[j].toString() + (iOffByOne).toString());  
+          
+        
+          var img = document.createElement('img'); 
+          img.id = columnNames[j].toString() + (iOffByOne).toString() + "image";
+          img.src = "graphics/" + colorCell.toString()+"-candy.png"; 
+            
+          img.style.width = "60%"; 
+          img.style.textAlign = "center"; 
+          img.style.tableLayout = "fixed"; 
+          img.style.position = "relative"; 
+          
+         
+         
+          td.appendChild(img); 
+        }
+        else
+        {
+          var td = tr.insertCell(); 
+        }
+      }
+	 i++;
+  }
+  mainTable.parentNode.replaceChild(tbl, mainTable); 
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	document.getElementById("crushButton").disabled = true;
+
+}
+
+
+var disableAllButtons = function() {
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	document.getElementById("crushButton").disabled = true;
+}
+
+// Final initialization entry point: the Javascript code inside this block
+// runs at the end of start-up when the page has finished loading.
+$(document).ready(function()
+{
+  // Your code here.
+	rules.prepareNewGame(); 
+    drawTable(); 
+	
+});
+/* Event Handlers */
+// access the candy object with info.candy
+// add a candy to the board
+$(board).on('add', function(e, info)
+{
+
+});
+// move a candy on the board
+$(board).on('move', function(e, info)
+{
+  // Your code here.
+	var currentCol = info.fromCol;
+	var currentRow = info.fromRow;
+	var toCol = info.toCol;
+	var toRow = info.toRow;
+	
+	//alert(currentRow + " " + currentCol + " " + toRow + " " + toCol);
+  
+	var myTable = document.getElementById('mainTable');
+	var tempCell = myTable.rows[currentRow].cells[currentCol].innerHTML;
+	myTable.rows[currentRow].cells[currentCol].innerHTML = myTable.rows[toRow].cells[toCol].innerHTML;
+	myTable.rows[toRow].cells[toCol].innerHTML = tempCell;
+
+});
+// remove a candy from the board
+$(board).on('remove', function(e, info)
+{
+  // Your code here.
+	var currentCol = info.fromCol;
+	var currentRow = info.fromRow;
+	console.log(currentRow + " " + currentCol);
+	var myTable = document.getElementById('mainTable');
+	if (myTable.rows[currentRow] != null)
+		myTable.rows[currentRow].deleteCell(currentCol);
+});
+
+// Button Events
+$(document).on('click', "#newGameButton", function(evt) //New Game event handling
+{
+  // Your code here.
+  board.clear();  //Reset the board and returns a new grid of randomized candies
+  rules.prepareNewGame(); //Prepare the game
+  drawTable();
+    
+  document.getElementById("candyLocation").value = "";
+  document.getElementById("scoreUpdate").style.background = "white";
+    
+});
+
+//directional button event handling
+$(document).on('click', "#leftButton", function(evt) 
+{
+	var move = document.getElementById("move").value + evt.key;
+	
+	var first = move.charAt(0);
+	var second = move.charAt(1);
+	
+	var x = parseInt(second)-1;
+	var y = first.charCodeAt(0) - 97;
+	board.flipCandies(  board.getCandyAt(x,y), board.getCandyInDirection(board.getCandyAt(x,y), 'left')  );
+	
+	fromCandy = board.getCandyAt(x,y);
+	toCandy = board.getCandyInDirection(board.getCandyAt(x,y), 'left');
+	
+	document.getElementById("move").value = '';
+	document.getElementById("move").focus();
+	
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	document.getElementById("crushButton").disabled = true;
+	
+});  
+
+//directional button event handling
+$(document).on('click', "#rightButton", function(evt) 
+{
+	var move = document.getElementById("move").value + evt.key;
+	
+	var first = move.charAt(0);
+	var second = move.charAt(1);
+	
+	var x = parseInt(second)-1;
+	var y = first.charCodeAt(0) - 97;
+	board.flipCandies(  board.getCandyAt(x,y), board.getCandyInDirection(board.getCandyAt(x,y), 'right')  );
+	
+	fromCandy = board.getCandyAt(x,y);
+	toCandy = board.getCandyInDirection(board.getCandyAt(x,y), 'right');
+	
+	document.getElementById("move").value = '';
+	document.getElementById("move").focus();
+	
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	
+}); 
+
+//directional button event handling
+$(document).on('click', "#upButton", function(evt) 
+{
+	var move = document.getElementById("move").value + evt.key;
+	
+	var first = move.charAt(0);
+	var second = move.charAt(1);
+	
+	var x = parseInt(second)-1;
+	var y = first.charCodeAt(0) - 97;
+	board.flipCandies(  board.getCandyAt(x,y), board.getCandyInDirection(board.getCandyAt(x,y), 'up')  );
+	
+	fromCandy = board.getCandyAt(x,y);
+	toCandy = board.getCandyInDirection(board.getCandyAt(x,y), 'up');
+	
+	document.getElementById("move").value = '';
+	document.getElementById("move").focus();
+	
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	
+}); 
+
+//directional button event handling
+$(document).on('click', "#downButton", function(evt) 
+{
+	var move = document.getElementById("move").value + evt.key;
+	
+	var first = move.charAt(0);
+	var second = move.charAt(1);
+	
+	var x = parseInt(second)-1;
+	var y = first.charCodeAt(0) - 97;
+	board.flipCandies(  board.getCandyAt(x,y), board.getCandyInDirection(board.getCandyAt(x,y), 'down')  );
+	
+	fromCandy = board.getCandyAt(x,y);
+	toCandy = board.getCandyInDirection(board.getCandyAt(x,y), 'down');
+	
+	document.getElementById("move").value = '';
+	document.getElementById("move").focus();
+	
+	document.getElementById("leftButton").disabled = true;
+	document.getElementById("rightButton").disabled = true;
+	document.getElementById("upButton").disabled = true;
+	document.getElementById("downButton").disabled = true;
+	
+}); 
+
+//directional button event handling
+$(document).on('click', "#crushButton", function(evt) 
+{
+	var swap = [fromCandy, toCandy];
+	rules.removeCrushes(rules.getCandyCrushes(swap));
+});
+// keyboard events arrive here
+$(document).on('keydown', function(evt) {
+  // Your code here.
+  var move = document.getElementById("move").value + evt.key;
+  //console.log(move);
+  //console.log(evt.key);
+  var first = move.charAt(0);
+  var second = move.charAt(1);
+  //console.log(first);
+  
+  var validInput = function(move) {
+	if (move.length != 2) {
+		disableAllButtons();
+		return false;
+	}
+	else if (!first.match(/[a-hA-H]/i)) {
+		disableAllButtons();
+		return false;
+	}
+	else if (!second.match(/[1-9]/i))  {
+		disableAllButtons();
+		return false;
+	}
+	else 
+		return true;
+  }
+  
+  if (validInput(move)) {
+	var x = parseInt(second)-1;
+	var y = first.charCodeAt(0) - 97;
+	if ( rules.isMoveTypeValid(board.getCandyAt(x,y), 'left') )
+		document.getElementById("leftButton").disabled = false;
+	if ( rules.isMoveTypeValid(board.getCandyAt(x,y), 'right') )
+		document.getElementById("rightButton").disabled = false;
+	if ( rules.isMoveTypeValid(board.getCandyAt(x,y), 'up') )
+		document.getElementById("upButton").disabled = false;
+	if ( rules.isMoveTypeValid(board.getCandyAt(x,y), 'down') )
+		document.getElementById("downButton").disabled = false;
+	
+  }
+  
+});
+</script>
+
+
+</head>
+
+<body>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-4" id="firstColumn">
+      <div>
+      <!-- Column 1 Code Here -->
+      <p class= "gameName"> Candy </p>
+    <br/>
+      <p class= "gameName"> Crush </p>
+    <br/>
+        
+      <input class = "btn" type = "button" id="newGameButton" value = "New Game"></input>
+    
+    </div> 
+  </div>
+
+    <div class="col-md-4" id="mainColumn">
+
+      <!-- Column 2 Code Here -->
+      <table id= "mainTable" width="320px" height="320px"></table>
+       
+    </div>
+
+    <div class="col-md-4" id="lastColumn">
+
+      <!-- Column 3 Code Here -->
+        
+        <form>
+        
+            MOVE: <input type="text" id="move"<br>
+        
+        </form>
+   
+        <input class = "btn" type = "button" id="upButton" value = &uarr;></input>
+      <br/>
+        <input class = "btn" type = "button" id="leftButton" value = &larr;></input>
+      <br/>
+        <input class = "btn" type = "button" id="rightButton" value = &rarr;></input>
+      <br/>
+        <input class = "btn" type = "button" id="downButton" value = &darr;></input>
+      <br/>
+        <input class = "btn" type = "button" id="crushButton" value = "Crush Once"></input>
+      <br/>
+
+       </div>
+      
+        
+           </div>
+      
+
+    </div>
+  </div> <!-- class="row" -->
+</div> <!-- class="container" -->
+
+</body>
+
+</html>
+
+    
+
